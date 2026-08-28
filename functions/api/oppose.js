@@ -116,7 +116,7 @@ export async function onRequestPost(context) {
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: text }
         ],
-        max_completion_tokens: 1200,
+        max_completion_tokens: 2500,
         reasoning_effort: "low"
       })
     });

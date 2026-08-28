@@ -121,35 +121,29 @@ export async function onRequestPost(context) {
 然后空一行，再输出正文判词，不要标题、不要前缀、不要"反对派说"之类的自称。`;
 
   try {
-    const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${env.OPENAI_API_KEY}`
+        "x-api-key": env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify({
-        model: "gpt-5.6-terra",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: text }
-        ],
-        max_completion_tokens: 2500,
-        reasoning_effort: "low"
+        model: "claude-sonnet-4-6",
+        max_tokens: 1200,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: "user", content: text }]
       })
     });
 
-    if (!openaiRes.ok) {
-      const errText = await openaiRes.text();
+    if (!anthropicRes.ok) {
+      const errText = await anthropicRes.text();
       return new Response(JSON.stringify({ error: "上游调用失败", detail: errText }), { status: 502 });
     }
 
-    const data = await openaiRes.json();
-    const assistantText = data.choices?.[0]?.message?.content ?? "";
-
-    // 转换成前端原本期望的格式（跟Anthropic返回结构对齐），前端代码不用改
-    return new Response(JSON.stringify({
-      content: [{ type: "text", text: assistantText }]
-    }), {
+    const data = await anthropicRes.json();
+    // Anthropic 原生返回的结构（content 数组）跟前端期望的格式本来就一致，直接透传
+    return new Response(JSON.stringify(data), {
       headers: { "Content-Type": "application/json" }
     });
   } catch (e) {

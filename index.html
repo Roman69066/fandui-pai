@@ -284,7 +284,23 @@ async function fireOpposition() {
       body: JSON.stringify({ text: text })
     });
     const data = await response.json();
+
+    if (!response.ok) {
+      document.getElementById('receipt').classList.add('show');
+      document.getElementById('receiptBody').textContent =
+        '后端调用出错：' + (data.error || '未知错误') +
+        (data.detail ? '\n\n详细信息：' + data.detail : '');
+      return;
+    }
+
     const full = (data.content || []).map(b => b.type === 'text' ? b.text : '').join('').trim();
+
+    if (!full) {
+      document.getElementById('receipt').classList.add('show');
+      document.getElementById('receiptBody').textContent =
+        '模型返回了空内容，原始响应：' + JSON.stringify(data).slice(0, 500);
+      return;
+    }
 
     const match = full.match(/^\[赌注[:：]\s*(低|高)\s*\|\s*可逆性[:：]\s*(可逆|半可逆|不可逆|NA)\s*\]\s*\n+([\s\S]*)$/);
     let stake = '高', rev = 'NA', body = full;

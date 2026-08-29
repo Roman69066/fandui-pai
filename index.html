@@ -192,7 +192,7 @@
   @keyframes blink { 50% { opacity: 0; } }
 
   .again-row { display:none; margin-top: 18px; text-align:center; }
-  .again-row.show { display:block; }
+  .again-row.show { display:flex; justify-content:center; gap: 10px; }
   .again-row button {
     background: none;
     border: 1px solid var(--line);
@@ -203,6 +203,7 @@
     cursor: pointer;
   }
   .again-row button:hover { border-color: var(--red); color: var(--paper); }
+  .again-row button#shareBtn:hover { border-color: var(--yellow); color: var(--paper); }
 
   .foot-note {
     margin-top: 56px;
@@ -240,7 +241,10 @@
     <div class="receipt-body" id="receiptBody"></div>
   </div>
 
-  <div class="again-row" id="againRow"><button id="again">再挨一怼</button></div>
+  <div class="again-row" id="againRow">
+    <button id="again">再挨一怼</button>
+    <button id="shareBtn">分享给朋友</button>
+  </div>
 
   <div class="foot-note">立案：<span id="caseCount">1</span> 起</div>
 </div>
@@ -386,6 +390,27 @@ document.getElementById('again').addEventListener('click', () => {
   document.getElementById('receipt').classList.remove('show');
   document.getElementById('gaugeRow').classList.remove('show');
   document.getElementById('againRow').classList.remove('show');
+});
+
+document.getElementById('shareBtn').addEventListener('click', async () => {
+  const shareBtn = document.getElementById('shareBtn');
+  const shareData = {
+    title: '反怼派',
+    text: '在你做重要决定以前，先来这里挨一顿怼。',
+    url: window.location.href
+  };
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData);
+    } else if (navigator.clipboard) {
+      await navigator.clipboard.writeText(shareData.url);
+      const original = shareBtn.textContent;
+      shareBtn.textContent = '已复制链接';
+      setTimeout(() => { shareBtn.textContent = original; }, 1800);
+    }
+  } catch (e) {
+    // 用户取消分享面板会走到这里，属于正常操作，不用报错
+  }
 });
 </script>
 </body>

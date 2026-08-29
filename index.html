@@ -223,7 +223,7 @@
     <textarea id="input" placeholder="说说你最近那个自信满满的决定，我马上让你怀疑人生。"></textarea>
     <div class="intake-footer">
       <span class="hint">想清楚了再发，我不接不完整的话。</span>
-      <button id="fire">反对我</button>
+      <button id="fire">怼我</button>
     </div>
   </div>
 
@@ -344,7 +344,7 @@ async function fireOpposition() {
     document.getElementById('receiptBody').textContent = '连话都没说完就断了——跟你有点像。（网络请求失败，稍后再试）';
   } finally {
     btn.disabled = false;
-    btn.textContent = '反对我';
+    btn.textContent = '怼我';
   }
 }
 

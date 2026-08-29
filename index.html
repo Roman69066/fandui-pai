@@ -289,9 +289,14 @@ async function fireOpposition() {
 
     if (!response.ok) {
       document.getElementById('receipt').classList.add('show');
-      document.getElementById('receiptBody').textContent =
-        '后端调用出错：' + (data.error || '未知错误') +
-        (data.detail ? '\n\n详细信息：' + data.detail : '');
+      if (data.isRateLimit) {
+        // 限流提示是产品的一部分语气，不是技术报错，不加"后端调用出错"这层包装
+        document.getElementById('receiptBody').textContent = data.error || '怼累了，歇歇，明天再怼';
+      } else {
+        document.getElementById('receiptBody').textContent =
+          '后端调用出错：' + (data.error || '未知错误') +
+          (data.detail ? '\n\n详细信息：' + data.detail : '');
+      }
       return;
     }
 

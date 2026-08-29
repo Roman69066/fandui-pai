@@ -302,6 +302,21 @@ async function fireOpposition() {
       return;
     }
 
+    // 先检查是不是安全模式——命中的话跳过赌注仪表和"判词"包装，直接显示回应
+    const safetyMatch = full.match(/^\[模式[:：]\s*安全\s*\]\s*\n+([\s\S]*)$/);
+    if (safetyMatch) {
+      document.getElementById('gaugeRow').classList.remove('show');
+      const receipt = document.getElementById('receipt');
+      receipt.classList.add('show');
+      document.getElementById('stamp').textContent = '';
+      await typeOut(safetyMatch[1].trim());
+      caseNum++;
+      document.getElementById('caseCount').textContent = caseNum;
+      setCaseId(caseNum);
+      document.getElementById('againRow').classList.add('show');
+      return;
+    }
+
     const match = full.match(/^\[赌注[:：]\s*(低|高)\s*\|\s*可逆性[:：]\s*(可逆|半可逆|不可逆|NA)\s*\]\s*\n+([\s\S]*)$/);
     let stake = '高', rev = 'NA', body = full;
     if (match) { stake = match[1]; rev = match[2]; body = match[3].trim(); }

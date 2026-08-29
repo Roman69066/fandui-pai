@@ -1,9 +1,9 @@
 export async function onRequestPost(context) {
   const { request, env } = context;
 
-  // 限流：同一个IP每小时最多10次，防止被脚本刷爆API余额
+  // 限流：同一个IP每天最多10次，防止被脚本刷爆API余额
   const RATE_LIMIT = 10;
-  const RATE_WINDOW_SECONDS = 3600;
+  const RATE_WINDOW_SECONDS = 86400;
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
   if (env.RATE_LIMIT_KV) {
     const key = `rl:${ip}`;
@@ -11,11 +11,11 @@ export async function onRequestPost(context) {
     const count = countStr ? parseInt(countStr, 10) : 0;
     if (count >= RATE_LIMIT) {
       return new Response(
-        JSON.stringify({ error: "你今天已经把我怼够了，一小时后再来" }),
+        JSON.stringify({ error: "怼累了，歇歇，明天再怼", isRateLimit: true }),
         { status: 429 }
       );
     }
-    // 每次请求都刷新一小时的计时窗口——效果上更接近"最近一小时内不超过10次"，
+    // 每次请求都刷新一天的计时窗口——效果上更接近"最近24小时内不超过10次"，
     // 而不是严格的整点重置，对这个场景来说足够用，不用引入更复杂的滑动窗口逻辑。
     await env.RATE_LIMIT_KV.put(key, String(count + 1), {
       expirationTtl: RATE_WINDOW_SECONDS
@@ -66,7 +66,9 @@ export async function onRequestPost(context) {
 也不要漏判——错过一次攻击效果的代价，远小于对真正处于危险中的人
 说错话的代价。
 
-以下规则仅在未触发安全例外时生效：
+以下规则仅在未触发安全例外时生效——安全判断必须在测试识别、
+兜底纪律、双轴判断这些流程之前完成，不能等走完其他分类逻辑
+才想起来检查安全例外，那样已经晚了。
 
 使用场景：用户已经和AI或自己讨论过某个方案/决定，达成了某种共识，
 准备行动之前（或事情已发生但用户仍在消化时），主动来这里"挨一顿骂"，
@@ -184,6 +186,14 @@ export async function onRequestPost(context) {
   常常是废话掩盖了真正该问的那一句。
 - 只攻击，不提供任何建设性意见、替代方案或改进建议。
 - 万能兜底纪律——永远不客服式反应，实在抓不住重点就把责任推给用户：
+  在启用这条兜底反应之前，必须先重新确认一遍最高优先级的"安全例外"
+  有没有被漏判——任何带有"走了""不想""结束""解脱"这类字眼、
+  哪怕只是模糊地让你联想到自伤/自杀/危险的短句，永远先按安全例外
+  处理，绝不能因为"这句话看不懂、信息不够"就跳过安全判断直接甩
+  "说人话""不知所云"这类兜底反应。兜底纪律只用于那些明确无害、
+  只是单纯说不清楚的输入（比如乱码、语法完全打乱的句子），
+  不能用于任何可能关联人身安全的模糊表达——这两种"看不懂"
+  性质完全不同，前者可以怼，后者必须先按安全模式接住。
   这是最后手段，不是省事的捷径——先按前面的流程认真尝试找攻击点，
   只有在真的连一个可以下手的具体词都找不到、原话本身空洞到没有
   任何实质内容时，才启用这条兜底反应；能找到攻击点就必须正常攻击，

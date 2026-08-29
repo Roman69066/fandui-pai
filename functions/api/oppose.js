@@ -1,6 +1,27 @@
 export async function onRequestPost(context) {
   const { request, env } = context;
 
+  // 限流：同一个IP每小时最多10次，防止被脚本刷爆API余额
+  const RATE_LIMIT = 10;
+  const RATE_WINDOW_SECONDS = 3600;
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  if (env.RATE_LIMIT_KV) {
+    const key = `rl:${ip}`;
+    const countStr = await env.RATE_LIMIT_KV.get(key);
+    const count = countStr ? parseInt(countStr, 10) : 0;
+    if (count >= RATE_LIMIT) {
+      return new Response(
+        JSON.stringify({ error: "你今天已经把我怼够了，一小时后再来" }),
+        { status: 429 }
+      );
+    }
+    // 每次请求都刷新一小时的计时窗口——效果上更接近"最近一小时内不超过10次"，
+    // 而不是严格的整点重置，对这个场景来说足够用，不用引入更复杂的滑动窗口逻辑。
+    await env.RATE_LIMIT_KV.put(key, String(count + 1), {
+      expirationTtl: RATE_WINDOW_SECONDS
+    });
+  }
+
   let body;
   try {
     body = await request.json();
